@@ -1,2 +1,4 @@
-# GitHub Linguist override: these .m files are Microsoft Power Query M, not Wolfram/Mathematica.
-powerbi/queries/*.m linguist-language=Power-Query
+# GitHub Linguist cleanup
+# These .m files are Microsoft Power Query M, but GitHub may misclassify .m as Wolfram Language.
+# Exclude them from repository language statistics while keeping the actual Power Query source files.
+powerbi/queries/*.m -linguist-detectable
