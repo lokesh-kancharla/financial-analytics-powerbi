@@ -12,6 +12,71 @@ The report is designed around three pages:
 2. **Sector Analysis** — sector ranking, company comparison, and sector trend analysis.
 3. **Company Drill-Down** — company-specific price history, return KPIs, high/low values, and trading-volume detail.
 
+## Data Sources
+
+This project intentionally documents every data input used by the model so the analysis can be reproduced and audited.
+
+### 1. Stooq — live Power BI market-price source
+**Source:** https://stooq.com/
+
+The Power Query pipeline in `powerbi/queries/PriceHistory.m` downloads daily market data directly from Stooq's public CSV endpoint. The current model requests data from **January 1, 2025 through the refresh date** for the selected securities.
+
+**Fields used:**
+- Date
+- Open
+- High
+- Low
+- Close
+- Volume
+- Ticker (added by the Power Query transformation)
+
+**Current symbols:** AAPL, MSFT, NVDA, AMZN, GOOGL, META, JPM, V, XOM, and WMT.
+
+**Purpose:** Primary web source for the Power BI `Price History` fact table and dashboard refresh workflow.
+
+### 2. Yahoo Finance via `yfinance` — Python analytics source
+**Source:** https://finance.yahoo.com/  
+**Python package:** https://github.com/ranaroussi/yfinance
+
+The reproducible Python workflow in `python/market_analysis.py` uses the open-source `yfinance` package to download adjusted historical market prices beginning **January 1, 2021** for AAPL, MSFT, GOOGL, AMZN, NVDA, META, JPM, and XOM.
+
+The script generates:
+- `data/daily_prices.csv`
+- `data/daily_returns.csv`
+- `data/company_metrics.csv`
+
+Derived metrics include total return, annualized volatility, average daily return, and maximum drawdown.
+
+**Purpose:** Independent Python-based quantitative-analysis workflow and reproducible dataset generation outside Power BI.
+
+> `yfinance` is an open-source client that retrieves Yahoo Finance market information. Yahoo Finance and `yfinance` are not treated as an official exchange feed in this portfolio project.
+
+### 3. Company / sector lookup — project-maintained reference table
+The `Companies` dimension is maintained directly inside the project in `powerbi/queries/Companies.m` and is also represented in the project data resources.
+
+**Fields:** Ticker, Company, Sector.
+
+**Current companies:** Apple, Microsoft, NVIDIA, Amazon, Alphabet, Meta Platforms, JPMorgan Chase, Visa, Exxon Mobil, and Walmart.
+
+**Purpose:** Supplies readable company names and sector classifications used for filtering, relationships, drill-downs, and sector-level comparisons.
+
+This is a **project-maintained analytical lookup**, not a live S&P Dow Jones Indices constituent feed. The repository should therefore not be interpreted as an authoritative or complete current S&P 500 constituent dataset.
+
+### 4. Simulated demo dataset — dashboard prototyping only
+`price_history_demo.csv` is a **synthetically generated demonstration dataset** used only for assembling/testing dashboard layouts when a web refresh is unavailable.
+
+**Purpose:** UI development, relationship testing, and Power BI prototyping.
+
+> **Important:** Simulated values must never be presented as actual market performance, research results, or historical S&P 500 observations. Published screenshots/results should use refreshed public market data.
+
+### Data-source summary
+| Source | Access method | Main use | Status |
+|---|---|---|---|
+| Stooq | Power Query `Web.Contents` + CSV | Power BI OHLCV price history | Public web market data |
+| Yahoo Finance | Python `yfinance` | Prices, returns, volatility, drawdown analysis | Public web data via third-party Python client |
+| Project-maintained Companies table | Power Query / repository data | Ticker, company and sector dimension | Curated project reference data |
+| Simulated demo price history | Repository CSV | Dashboard prototyping only | Synthetic — not real market data |
+
 ## Data Model
 - `Companies` — company/ticker/sector lookup table.
 - `Price History` — daily OHLCV market observations.
@@ -29,10 +94,36 @@ The report is designed around three pages:
 - Max Close
 - Min Close
 
-## Live Data Connection
-The Power BI project source includes a **Power Query M web-data pipeline** for public daily market data. A separate Python/yfinance pipeline is also included for reproducible offline dataset generation.
+## Data Pipeline
 
-> Public market data can change and third-party endpoints can occasionally be unavailable. The repository therefore also includes a demo-data workflow for dashboard prototyping. Demo data must never be presented as real market performance.
+```text
+Stooq public CSV endpoint
+        ↓
+Power Query / Web.Contents
+        ↓
+Price History fact table
+        ↓
+Companies dimension
+        ↓
+Power BI semantic model + DAX
+        ↓
+Executive / Sector / Company dashboards
+
+Yahoo Finance
+        ↓
+yfinance + Pandas
+        ↓
+Prices / Returns / Metrics CSVs
+        ↓
+Independent quantitative analysis
+```
+
+## Data Limitations
+- Public third-party market endpoints may change, throttle requests, contain gaps, or become temporarily unavailable.
+- Market-price conventions and adjustments can differ across providers, so Stooq and Yahoo-derived values should not automatically be expected to match exactly.
+- The current company universe is a selected portfolio sample, not the complete S&P 500 index.
+- The project-maintained sector lookup should be reviewed before using the project for time-sensitive constituent/sector research.
+- This project is for portfolio, research-preparation, and educational analytics purposes; it is not investment advice or an official market-data product.
 
 ## Repository Structure
 ```text
