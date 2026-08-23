@@ -1,0 +1,2 @@
+# GitHub Linguist override: these .m files are Microsoft Power Query M, not Wolfram/Mathematica.
+powerbi/queries/*.m linguist-language=Power-Query
